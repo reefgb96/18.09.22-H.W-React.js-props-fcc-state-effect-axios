@@ -1,9 +1,11 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import { RickMortyCards } from "./RickMortyCards";
+import CreateCardModal from "./CreateCardModal";
 
 const RickMortyPage = () => {
   let charactersArr = [];
+  let [childData, setChildData] = useState({});
   let [dataArr, setDataArr] = useState(null);
   const [apiLink, setApiLink] = useState(
     "https://rickandmortyapi.com/api/character/"
@@ -23,13 +25,28 @@ const RickMortyPage = () => {
     sendReq();
   }, []);
 
+  const handleAddCard = (data) => {
+    dataArr.results = { ...data };
+    // setDataArr(dataArr);
+    displayCards();
+  };
+
+  useEffect(() => {
+    sendReq();
+  }, [dataArr]);
+
   const dispalyBtns = () => {
     if (dataArr != []) {
       return (
-        <div>
-          <button onClick={handleNextPage}>next</button>
-          <button onClick={handlePrevPage}>prev</button>
-        </div>
+        <>
+          <div>
+            <CreateCardModal onAddCard={handleAddCard} arr={dataArr} />
+          </div>
+          <div>
+            <button onClick={handleNextPage}>next</button>
+            <button onClick={handlePrevPage}>prev</button>
+          </div>
+        </>
       );
     }
   };

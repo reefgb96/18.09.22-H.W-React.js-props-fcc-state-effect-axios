@@ -1,5 +1,12 @@
 import { Fragment, useState } from "react";
 import axios from "axios";
+import Joi from "joi-browser";
+import validate from "../components/validation/validation";
+import loginSchema from "../components/validation/register.validation";
+import { toast } from "react-toastify";
+import { useDispatch } from "react-redux";
+import { registerActions } from "./store-HW/register";
+import { useSelector } from "react-redux";
 
 const RegisterPage = () => {
   const [userInput, setUserInput] = useState({
@@ -8,6 +15,8 @@ const RegisterPage = () => {
     passwordInput: "",
     bizInput: false,
   });
+  const dispatch = useDispatch();
+
   const handleUserInputChange = (ev) => {
     let newUserInput = JSON.parse(JSON.stringify(userInput));
     if (newUserInput.hasOwnProperty(ev.target.id)) {
@@ -25,7 +34,8 @@ const RegisterPage = () => {
     }
   };
 
-  const handleRegisterClick = () => {
+  const handleSubmitRegister = (ev) => {
+    ev.preventDefault();
     axios
       .post("/users/register", {
         name: userInput.nameInput,
@@ -34,20 +44,66 @@ const RegisterPage = () => {
       })
       .then((res) => {
         console.log("res", res);
+        dispatch(registerActions.register());
         setUserInput({
           nameInput: "",
           emailInput: "",
           passwordInput: "",
           bizInput: false,
         });
+        toast(`🦄 Thanks for registering ${res.data.name}!`, {
+          position: "top-right",
+          autoClose: 5000,
+          hideProgressBar: false,
+          closeOnClick: true,
+          pauseOnHover: true,
+          draggable: true,
+          progress: undefined,
+        });
       })
       .catch((err) => {
+        ev.preventDefault();
         console.log("err from axios", err);
+        const { error } = validate(userInput, loginSchema);
+        if (error) {
+          console.log({ error });
+          let errorMsgs = `\n`;
+          for (let errorItem of error.details) {
+            switch (errorItem.type) {
+              case "string.min":
+                errorMsgs += `***${errorItem.context.label} length must be at least ${errorItem.context.limit} characters long, `;
+                break;
+              case "string.max":
+                errorMsgs += `***${errorItem.context.label} length must be at least ${errorItem.context.limit} characters long, `;
+                break;
+              case "string.empty":
+                errorMsgs += `***${errorItem.context.label} length must be at least ${errorItem.context.limit} characters long, `;
+                break;
+              // default:
+              //   errorMsgs += "***something went wrong,";
+              //   break;
+            }
+          }
+          toast.warn(errorMsgs, {
+            position: "top-right",
+            autoClose: 5000,
+            hideProgressBar: false,
+            closeOnClick: true,
+            pauseOnHover: true,
+            draggable: true,
+            progress: undefined,
+          });
+          return;
+        }
       });
   };
+  // const reg = useSelector((state) => state.registration.register);
 
   return (
-    <div className="d-flex flex-column align-items-center ">
+    <form
+      className="d-flex flex-column align-items-center"
+      onSubmit={handleSubmitRegister}
+    >
       <h2>Register page</h2>
       <div className="form-floating mb-3 w-75">
         <input
@@ -96,10 +152,8 @@ const RegisterPage = () => {
         </label>
       </div>
 
-      <button className="btn btn-primary" onClick={handleRegisterClick}>
-        Register
-      </button>
-    </div>
+      <button className="btn btn-primary">Register</button>
+    </form>
   );
 };
 export default RegisterPage;
